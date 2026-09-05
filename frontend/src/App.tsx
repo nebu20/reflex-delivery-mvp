@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import RetailerPage from './pages/RetailerPage'
+import DispatcherPage from './pages/DispatcherPage'
+import RiderPage from './pages/RiderPage'
 import './App.css'
 
 interface HealthResponse {
@@ -6,7 +10,8 @@ interface HealthResponse {
   service: string
 }
 
-function App() {
+function HomePage() {
+  const navigate = useNavigate()
   const [health, setHealth] = useState<HealthResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -23,6 +28,30 @@ function App() {
         setLoading(false)
       })
   }, [])
+
+  const roles = [
+    {
+      icon: '🏪',
+      title: 'Retailer Staff',
+      description: 'Create a delivery request for a customer',
+      path: '/retailer',
+      id: 'role-retailer',
+    },
+    {
+      icon: '📋',
+      title: 'Dispatcher',
+      description: 'View and assign pending delivery requests',
+      path: '/dispatcher',
+      id: 'role-dispatcher',
+    },
+    {
+      icon: '🏍️',
+      title: 'Rider',
+      description: 'Track assigned deliveries and update status',
+      path: '/rider',
+      id: 'role-rider',
+    },
+  ]
 
   return (
     <div className="container">
@@ -69,30 +98,41 @@ function App() {
       </div>
 
       <div className="roles-section">
-        <h2 className="roles-heading">Personas (Coming Next)</h2>
+        <h2 className="roles-heading">Select a Role to Continue</h2>
         <div className="roles-grid">
-          <div className="role-card">
-            <div className="role-icon">🏪</div>
-            <h3>Retailer Staff</h3>
-            <p>Create delivery requests for customers</p>
-          </div>
-          <div className="role-card">
-            <div className="role-icon">📋</div>
-            <h3>Dispatcher</h3>
-            <p>Assign open deliveries to riders</p>
-          </div>
-          <div className="role-card">
-            <div className="role-icon">🏍️</div>
-            <h3>Rider</h3>
-            <p>Track and update delivery status</p>
-          </div>
+          {roles.map((role) => (
+            <button
+              key={role.path}
+              id={role.id}
+              className="role-card"
+              onClick={() => navigate(role.path)}
+            >
+              <div className="role-icon">{role.icon}</div>
+              <h3>{role.title}</h3>
+              <p>{role.description}</p>
+              <span className="role-arrow">→</span>
+            </button>
+          ))}
         </div>
       </div>
 
       <p className="footer">
-        Reflex MVP · Sprint 1 Foundation · Node.js + Express + SQLite + React + Vite
+        Reflex MVP · Sprint 2 · Node.js + Express + SQLite + React + Vite
       </p>
     </div>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/retailer" element={<RetailerPage />} />
+        <Route path="/dispatcher" element={<DispatcherPage />} />
+        <Route path="/rider" element={<RiderPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

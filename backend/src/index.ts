@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import healthRouter from './routes/health';
+import deliveriesRouter from './routes/deliveries';
 import { initDb } from './db';
 
 const app = express();
@@ -15,6 +16,7 @@ initDb();
 
 // Routes
 app.use('/api', healthRouter);
+app.use('/api/deliveries', deliveriesRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Reflex API running on http://localhost:${PORT}`);
