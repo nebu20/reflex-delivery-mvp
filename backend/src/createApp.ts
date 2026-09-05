@@ -13,7 +13,15 @@ import { DeliveryController } from './modules/deliveries/delivery.controller';
 
 export function createApp(db: Database.Database) {
   const app = express();
-  app.use(cors());
+
+  const corsOrigin = process.env.CORS_ORIGIN;
+  if (corsOrigin) {
+    const origins = corsOrigin.split(',').map((o) => o.trim());
+    app.use(cors({ origin: origins.length === 1 ? origins[0] : origins, credentials: true }));
+  } else {
+    app.use(cors());
+  }
+
   app.use(express.json());
 
   const repository = new DeliveryRepository(db);

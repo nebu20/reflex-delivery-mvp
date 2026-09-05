@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import { apiFetch } from './api/client'
 import RetailerPage from './pages/RetailerPage'
 import DispatcherPage from './pages/DispatcherPage'
 import RiderPage from './pages/RiderPage'
@@ -17,14 +18,13 @@ function HomePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/health')
-      .then((res) => res.json())
+    apiFetch<HealthResponse>('/health')
       .then((data: HealthResponse) => {
         setHealth(data)
         setLoading(false)
       })
       .catch(() => {
-        setError('API unreachable — start the backend with: npm run dev')
+        setError('API unreachable — check backend service')
         setLoading(false)
       })
   }, [])

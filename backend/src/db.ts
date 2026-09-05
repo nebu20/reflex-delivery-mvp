@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'reflex.db');
+const DEFAULT_DB_PATH = path.join(__dirname, '..', 'data', 'reflex.db');
 
 let db: Database.Database;
 
@@ -40,7 +40,7 @@ export function applySchema(instance: Database.Database): void {
 }
 
 export function initDb(dbPath?: string): void {
-  const resolvedPath = dbPath ?? DB_PATH;
+  const resolvedPath = dbPath || process.env.DB_PATH || DEFAULT_DB_PATH;
   const dataDir = path.dirname(resolvedPath);
 
   if (!fs.existsSync(dataDir)) {
