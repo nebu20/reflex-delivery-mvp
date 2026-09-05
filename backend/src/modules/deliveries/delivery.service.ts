@@ -1,5 +1,5 @@
 import { DeliveryRepository } from './delivery.repository';
-import { Delivery, CreateDeliveryDTO, RIDERS } from './delivery.types';
+import { Delivery, CreateDeliveryDTO, RecordProofDTO, RIDERS } from './delivery.types';
 
 export class NotFoundError extends Error {}
 export class ValidationError extends Error {}
@@ -88,6 +88,29 @@ export class DeliveryService {
     }
 
     return this.repository.updateStatus(id, cleanStatus)!;
+  }
+
+  recordProof(id: string, dto: Partial<RecordProofDTO>): Delivery {
+    const recipientName = dto.recipientName?.toString().trim();
+    if (!recipientName) {
+      throw new ValidationError('recipientName is required');
+    }
+
+    const delivery = this.repository.findById(id);
+    if (!delivery) {
+      throw new NotFoundError(`Delivery with ID '${id}' not found`);
+    }
+
+    if (delivery.status !== 'DELIVERED') {
+      throw new ConflictError('Proof of delivery can only be recorded for delivered orders');
+    }
+
+    if (delivery.proofOfDelivery) {
+      throw new ConflictError('Proof of delivery has already been recorded for this order');
+    }
+
+    const note = dto.note?.toString().trim() || null;
+    return this.repository.recordProof(id, recipientName, note)!;
   }
 
   getDeliveriesByRider(riderId: string): Delivery[] {

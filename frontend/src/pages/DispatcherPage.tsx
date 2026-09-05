@@ -74,7 +74,6 @@ export default function DispatcherPage() {
         body: JSON.stringify({ riderId }),
       })
 
-      // Update delivery in local state
       setDeliveries((prev) =>
         prev.map((d) => (d.id === deliveryId ? updatedDelivery : d))
       )
@@ -195,6 +194,18 @@ export default function DispatcherPage() {
                     <div className="assigned-info">
                       <span className="field-label">Assigned to:</span>
                       <span className="assigned-rider-name">🏍️ {getRiderName(d.assignedRider)}</span>
+                    </div>
+                  )}
+
+                  {/* Proof status for delivered orders */}
+                  {d.status === 'DELIVERED' && (
+                    <div className="dispatcher-proof-status">
+                      <span className="field-label">Proof of Delivery:</span>
+                      {d.proofOfDelivery ? (
+                        <span className="badge badge-green">✓ Confirmed</span>
+                      ) : (
+                        <span className="badge badge-yellow">Pending</span>
+                      )}
                     </div>
                   )}
 

@@ -18,17 +18,25 @@ export function applySchema(instance: Database.Database): void {
   instance.pragma('journal_mode = WAL');
   instance.exec(`
     CREATE TABLE IF NOT EXISTS deliveries (
-      id               TEXT PRIMARY KEY,
-      customer_name    TEXT NOT NULL,
-      customer_phone   TEXT NOT NULL,
-      delivery_address TEXT NOT NULL,
-      item_description TEXT NOT NULL,
-      status           TEXT NOT NULL DEFAULT 'REQUESTED',
-      assigned_rider   TEXT,
-      created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP
+      id                   TEXT PRIMARY KEY,
+      customer_name        TEXT NOT NULL,
+      customer_phone       TEXT NOT NULL,
+      delivery_address     TEXT NOT NULL,
+      item_description     TEXT NOT NULL,
+      status               TEXT NOT NULL DEFAULT 'REQUESTED',
+      assigned_rider       TEXT,
+      proof_recipient_name TEXT,
+      proof_note           TEXT,
+      proof_confirmed_at   DATETIME,
+      created_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at           DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Migration helper for existing table instances
+  try { instance.exec('ALTER TABLE deliveries ADD COLUMN proof_recipient_name TEXT;'); } catch {}
+  try { instance.exec('ALTER TABLE deliveries ADD COLUMN proof_note TEXT;'); } catch {}
+  try { instance.exec('ALTER TABLE deliveries ADD COLUMN proof_confirmed_at DATETIME;'); } catch {}
 }
 
 export function initDb(dbPath?: string): void {

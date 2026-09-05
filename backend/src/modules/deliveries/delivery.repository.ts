@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { randomUUID } from 'crypto';
-import { Delivery, CreateDeliveryDTO } from './delivery.types';
+import { Delivery, CreateDeliveryDTO, ProofOfDelivery } from './delivery.types';
 
 interface DeliveryRow {
   id: string;
@@ -10,11 +10,22 @@ interface DeliveryRow {
   item_description: string;
   status: string;
   assigned_rider: string | null;
+  proof_recipient_name: string | null;
+  proof_note: string | null;
+  proof_confirmed_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
 function rowToDelivery(row: DeliveryRow): Delivery {
+  const proofOfDelivery: ProofOfDelivery | null = row.proof_confirmed_at
+    ? {
+        recipientName: row.proof_recipient_name!,
+        note: row.proof_note ?? null,
+        confirmedAt: row.proof_confirmed_at,
+      }
+    : null;
+
   return {
     id: row.id,
     customerName: row.customer_name,
@@ -24,6 +35,7 @@ function rowToDelivery(row: DeliveryRow): Delivery {
     itemDescription: row.item_description,
     status: row.status as Delivery['status'],
     assignedRider: row.assigned_rider,
+    proofOfDelivery,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -93,6 +105,17 @@ export class DeliveryRepository {
       WHERE id = ?
     `);
     stmt.run(status, now, id);
+    return this.findById(id);
+  }
+
+  recordProof(id: string, recipientName: string, note?: string | null): Delivery | null {
+    const now = new Date().toISOString();
+    const stmt = this.db.prepare(`
+      UPDATE deliveries
+      SET proof_recipient_name = ?, proof_note = ?, proof_confirmed_at = ?, updated_at = ?
+      WHERE id = ?
+    `);
+    stmt.run(recipientName, note ?? null, now, now, id);
     return this.findById(id);
   }
 }

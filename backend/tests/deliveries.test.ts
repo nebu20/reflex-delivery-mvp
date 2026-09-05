@@ -95,6 +95,7 @@ describe('Reflex Delivery Management API', () => {
       expect(res.body.id).toBe(deliveryId);
       expect(res.body.customerName).toBe('John Kamau');
       expect(res.body.status).toBe('REQUESTED');
+      expect(res.body.proofOfDelivery).toBeNull();
     });
 
     it('8. returns 404 Not Found for an unknown delivery ID', async () => {
@@ -309,7 +310,7 @@ describe('Reflex Delivery Management API', () => {
   describe('GET /api/riders/:riderId/deliveries', () => {
     it('26. returns assigned deliveries for valid rider -> 200 OK', async () => {
       const d1 = await request(app).post('/api/deliveries').send(validPayload);
-      const d2 = await request(app).post('/api/deliveries').send({ ...validPayload, customerName: 'Jane Wanjiru' });
+      await request(app).post('/api/deliveries').send({ ...validPayload, customerName: 'Jane Wanjiru' });
 
       await request(app).patch(`/api/deliveries/${d1.body.id}/assignment`).send({ riderId: 'RIDER-001' });
 
@@ -331,6 +332,127 @@ describe('Reflex Delivery Management API', () => {
       const res = await request(app).get('/api/riders/RIDER-003/deliveries');
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
+    });
+  });
+
+  // ── Task 6 Tests ────────────────────────────────────────────────────────
+  describe('PATCH /api/deliveries/:id/proof', () => {
+    async function createDeliveredOrder() {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      const id = created.body.id;
+      await request(app).patch(`/api/deliveries/${id}/assignment`).send({ riderId: 'RIDER-001' });
+      await request(app).patch(`/api/deliveries/${id}/status`).send({ status: 'PICKED_UP' });
+      await request(app).patch(`/api/deliveries/${id}/status`).send({ status: 'DELIVERED' });
+      return id;
+    }
+
+    it('29. Delivered delivery can record proof -> 200 OK', async () => {
+      const id = await createDeliveredOrder();
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau', note: 'Package received in good condition' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.proofOfDelivery).toBeDefined();
+    });
+
+    it('30. Recipient name is stored in proof', async () => {
+      const id = await createDeliveredOrder();
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau' });
+
+      expect(res.body.proofOfDelivery.recipientName).toBe('John Kamau');
+    });
+
+    it('31. Confirmation timestamp is stored in proof', async () => {
+      const id = await createDeliveredOrder();
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau' });
+
+      expect(res.body.proofOfDelivery.confirmedAt).toBeDefined();
+      expect(new Date(res.body.proofOfDelivery.confirmedAt).getTime()).not.toBeNaN();
+    });
+
+    it('32. Optional note is stored in proof', async () => {
+      const id = await createDeliveredOrder();
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau', note: 'Left with security guard' });
+
+      expect(res.body.proofOfDelivery.note).toBe('Left with security guard');
+    });
+
+    it('33. Missing recipient name returns 400 Bad Request', async () => {
+      const id = await createDeliveredOrder();
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ note: 'Package left at door' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/recipientName/i);
+    });
+
+    it('34. Unknown delivery returns 404 Not Found', async () => {
+      const res = await request(app)
+        .patch('/api/deliveries/NON_EXISTENT_ID/proof')
+        .send({ recipientName: 'John Kamau' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toMatch(/not found/i);
+    });
+
+    it('35. Non-delivered delivery cannot record proof -> 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      const id = created.body.id;
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/only be recorded for delivered/i);
+    });
+
+    it('36. Existing proof cannot be overwritten -> 409 Conflict', async () => {
+      const id = await createDeliveredOrder();
+      await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau' });
+
+      const overwrite = await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'Jane Kamau' });
+
+      expect(overwrite.status).toBe(409);
+      expect(overwrite.body.error).toMatch(/already been recorded/i);
+    });
+
+    it('37. GET delivery returns proof data when proof exists', async () => {
+      const id = await createDeliveredOrder();
+      await request(app)
+        .patch(`/api/deliveries/${id}/proof`)
+        .send({ recipientName: 'John Kamau', note: 'All good' });
+
+      const res = await request(app).get(`/api/deliveries/${id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.proofOfDelivery).toBeDefined();
+      expect(res.body.proofOfDelivery.recipientName).toBe('John Kamau');
+      expect(res.body.proofOfDelivery.note).toBe('All good');
+    });
+
+    it('38. GET delivery returns null proof when no proof exists', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      const res = await request(app).get(`/api/deliveries/${created.body.id}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.proofOfDelivery).toBeNull();
     });
   });
 });
