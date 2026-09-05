@@ -1,28 +1,30 @@
 import { DeliveryRepository } from './delivery.repository';
 import { Delivery, CreateDeliveryDTO } from './delivery.types';
 
+export class NotFoundError extends Error {}
+export class ValidationError extends Error {}
+export class ConflictError extends Error {}
+
 export class DeliveryService {
   constructor(private repository: DeliveryRepository) {}
 
   createDelivery(dto: Partial<CreateDeliveryDTO>): Delivery {
-    // Validate required fields
     const customerName = dto.customerName?.toString().trim();
     const customerPhone = dto.customerPhone?.toString().trim();
-    // Allow deliveryAddress or address
     const deliveryAddress = (dto.deliveryAddress || (dto as any).address)?.toString().trim();
     const itemDescription = dto.itemDescription?.toString().trim();
 
     if (!customerName) {
-      throw new Error('customerName is required');
+      throw new ValidationError('customerName is required');
     }
     if (!customerPhone) {
-      throw new Error('customerPhone is required');
+      throw new ValidationError('customerPhone is required');
     }
     if (!deliveryAddress) {
-      throw new Error('deliveryAddress is required');
+      throw new ValidationError('deliveryAddress is required');
     }
     if (!itemDescription) {
-      throw new Error('itemDescription is required');
+      throw new ValidationError('itemDescription is required');
     }
 
     return this.repository.create({
@@ -39,5 +41,23 @@ export class DeliveryService {
 
   getDeliveryById(id: string): Delivery | null {
     return this.repository.findById(id);
+  }
+
+  assignRider(id: string, riderId?: string): Delivery {
+    const cleanRiderId = riderId?.toString().trim();
+    if (!cleanRiderId) {
+      throw new ValidationError('riderId is required');
+    }
+
+    const delivery = this.repository.findById(id);
+    if (!delivery) {
+      throw new NotFoundError(`Delivery with ID '${id}' not found`);
+    }
+
+    if (delivery.status !== 'REQUESTED') {
+      throw new ConflictError('Delivery has already been assigned');
+    }
+
+    return this.repository.updateAssignment(id, cleanRiderId, 'ASSIGNED')!;
   }
 }

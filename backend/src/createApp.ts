@@ -7,6 +7,7 @@ import cors from 'cors';
 import Database from 'better-sqlite3';
 import healthRouter from './routes/health';
 import { createDeliveryRouter } from './modules/deliveries/delivery.routes';
+import { RIDERS } from './modules/deliveries/delivery.types';
 
 export function createApp(db: Database.Database) {
   const app = express();
@@ -14,5 +15,8 @@ export function createApp(db: Database.Database) {
   app.use(express.json());
   app.use('/api', healthRouter);
   app.use('/api/deliveries', createDeliveryRouter(db));
+  app.get('/api/riders', (_req, res) => {
+    res.json(RIDERS);
+  });
   return app;
 }

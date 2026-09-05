@@ -2,15 +2,17 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createTestDb } from '../src/db';
 import { createApp } from '../src/createApp';
+import { DeliveryRepository } from '../src/modules/deliveries/delivery.repository';
 import Database from 'better-sqlite3';
 
 let db: Database.Database;
 let app: ReturnType<typeof createApp>;
+let repository: DeliveryRepository;
 
 beforeEach(() => {
-  // Isolated in-memory SQLite database for each test — zero external DB dependency
   db = createTestDb();
   app = createApp(db);
+  repository = new DeliveryRepository(db);
 });
 
 const validPayload = {
@@ -20,7 +22,8 @@ const validPayload = {
   itemDescription: 'Samsung phone',
 };
 
-describe('Delivery Request API (Task 3)', () => {
+describe('Delivery API', () => {
+  // ── Task 3 Tests ────────────────────────────────────────────────────────
   describe('POST /api/deliveries', () => {
     it('1. successfully creates a delivery request -> 201 Created', async () => {
       const res = await request(app).post('/api/deliveries').send(validPayload);
@@ -98,6 +101,100 @@ describe('Delivery Request API (Task 3)', () => {
       const res = await request(app).get('/api/deliveries/NON_EXISTENT_ID');
       expect(res.status).toBe(404);
       expect(res.body.error).toMatch(/not found/i);
+    });
+  });
+
+  // ── Task 4 Tests ────────────────────────────────────────────────────────
+  describe('PATCH /api/deliveries/:id/assignment', () => {
+    it('9. REQUESTED delivery can be assigned -> 200 OK', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-001' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(created.body.id);
+    });
+
+    it('10. Assignment changes status to ASSIGNED and stores assignedRider', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-001' });
+
+      expect(res.body.status).toBe('ASSIGNED');
+      expect(res.body.assignedRider).toBe('RIDER-001');
+    });
+
+    it('11. Missing riderId returns 400 Bad Request', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/riderId/i);
+    });
+
+    it('12. Unknown delivery returns 404 Not Found', async () => {
+      const res = await request(app)
+        .patch('/api/deliveries/NON_EXISTENT_ID/assignment')
+        .send({ riderId: 'RIDER-001' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toMatch(/not found/i);
+    });
+
+    it('13. Already ASSIGNED delivery cannot be reassigned -> 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-001' });
+
+      const reassign = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-002' });
+
+      expect(reassign.status).toBe(409);
+      expect(reassign.body.error).toMatch(/already/i);
+    });
+
+    it('14. PICKED_UP delivery cannot be assigned -> 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      repository.updateStatus(created.body.id, 'PICKED_UP');
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-001' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/already/i);
+    });
+
+    it('15. DELIVERED delivery cannot be assigned -> 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      repository.updateStatus(created.body.id, 'DELIVERED');
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/assignment`)
+        .send({ riderId: 'RIDER-001' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/already/i);
+    });
+  });
+
+  describe('GET /api/riders', () => {
+    it('16. returns predefined rider list -> 200 OK', async () => {
+      const res = await request(app).get('/api/riders');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeGreaterThan(0);
+      expect(res.body[0]).toHaveProperty('id');
+      expect(res.body[0]).toHaveProperty('name');
     });
   });
 });

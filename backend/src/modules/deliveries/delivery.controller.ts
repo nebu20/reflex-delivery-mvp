@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { DeliveryService } from './delivery.service';
+import { DeliveryService, NotFoundError, ConflictError } from './delivery.service';
+import { RIDERS } from './delivery.types';
 
 export class DeliveryController {
   constructor(private service: DeliveryService) {}
@@ -27,5 +28,27 @@ export class DeliveryController {
       return;
     }
     res.status(200).json(delivery);
+  };
+
+  assignRider = (req: Request, res: Response): void => {
+    const id = req.params.id as string;
+    const { riderId } = req.body || {};
+
+    try {
+      const updated = this.service.assignRider(id, riderId);
+      res.status(200).json(updated);
+    } catch (err: any) {
+      if (err instanceof NotFoundError) {
+        res.status(404).json({ error: err.message });
+      } else if (err instanceof ConflictError) {
+        res.status(409).json({ error: err.message });
+      } else {
+        res.status(400).json({ error: err.message || 'Invalid request' });
+      }
+    }
+  };
+
+  getRiders = (_req: Request, res: Response): void => {
+    res.status(200).json(RIDERS);
   };
 }

@@ -68,4 +68,27 @@ export class DeliveryRepository {
     const row = this.db.prepare('SELECT * FROM deliveries WHERE id = ?').get(id) as DeliveryRow | undefined;
     return row ? rowToDelivery(row) : null;
   }
+
+  updateAssignment(id: string, riderId: string, status: string = 'ASSIGNED'): Delivery | null {
+    const now = new Date().toISOString();
+    const stmt = this.db.prepare(`
+      UPDATE deliveries
+      SET assigned_rider = ?, status = ?, updated_at = ?
+      WHERE id = ?
+    `);
+    stmt.run(riderId, status, now, id);
+    return this.findById(id);
+  }
+
+  // Helper for tests/status updates
+  updateStatus(id: string, status: string): Delivery | null {
+    const now = new Date().toISOString();
+    const stmt = this.db.prepare(`
+      UPDATE deliveries
+      SET status = ?, updated_at = ?
+      WHERE id = ?
+    `);
+    stmt.run(status, now, id);
+    return this.findById(id);
+  }
 }

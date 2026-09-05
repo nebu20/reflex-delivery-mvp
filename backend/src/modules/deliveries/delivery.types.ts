@@ -19,3 +19,18 @@ export interface CreateDeliveryDTO {
   deliveryAddress: string;
   itemDescription: string;
 }
+
+export interface AssignRiderDTO {
+  riderId: string;
+}
+
+export interface Rider {
+  id: string;
+  name: string;
+}
+
+export const RIDERS: Rider[] = [
+  { id: 'RIDER-001', name: 'Brian Otieno' },
+  { id: 'RIDER-002', name: 'Grace Wanjiku' },
+  { id: 'RIDER-003', name: 'David Kamau' },
+];
