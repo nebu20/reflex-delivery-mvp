@@ -1,9 +1,11 @@
 import { DeliveryRepository } from './delivery.repository';
-import { Delivery, CreateDeliveryDTO } from './delivery.types';
+import { Delivery, CreateDeliveryDTO, RIDERS } from './delivery.types';
 
 export class NotFoundError extends Error {}
 export class ValidationError extends Error {}
 export class ConflictError extends Error {}
+
+const VALID_STATUSES = ['REQUESTED', 'PENDING', 'ASSIGNED', 'PICKED_UP', 'DELIVERED'];
 
 export class DeliveryService {
   constructor(private repository: DeliveryRepository) {}
@@ -59,5 +61,40 @@ export class DeliveryService {
     }
 
     return this.repository.updateAssignment(id, cleanRiderId, 'ASSIGNED')!;
+  }
+
+  updateDeliveryStatus(id: string, targetStatus?: string): Delivery {
+    const cleanStatus = targetStatus?.toString().trim();
+    if (!cleanStatus || !VALID_STATUSES.includes(cleanStatus)) {
+      throw new ValidationError('Valid status value is required');
+    }
+
+    const delivery = this.repository.findById(id);
+    if (!delivery) {
+      throw new NotFoundError(`Delivery with ID '${id}' not found`);
+    }
+
+    const currentStatus = delivery.status;
+
+    // Allowed transitions ONLY:
+    // ASSIGNED -> PICKED_UP
+    // PICKED_UP -> DELIVERED
+    const isAllowed =
+      (currentStatus === 'ASSIGNED' && cleanStatus === 'PICKED_UP') ||
+      (currentStatus === 'PICKED_UP' && cleanStatus === 'DELIVERED');
+
+    if (!isAllowed) {
+      throw new ConflictError(`Invalid status transition from ${currentStatus} to ${cleanStatus}`);
+    }
+
+    return this.repository.updateStatus(id, cleanStatus)!;
+  }
+
+  getDeliveriesByRider(riderId: string): Delivery[] {
+    const riderExists = RIDERS.some((r) => r.id === riderId);
+    if (!riderExists) {
+      throw new NotFoundError(`Rider '${riderId}' not found`);
+    }
+    return this.repository.findByRiderId(riderId);
   }
 }

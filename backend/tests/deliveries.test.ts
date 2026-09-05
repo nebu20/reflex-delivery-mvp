@@ -22,7 +22,7 @@ const validPayload = {
   itemDescription: 'Samsung phone',
 };
 
-describe('Delivery API', () => {
+describe('Reflex Delivery Management API', () => {
   // ── Task 3 Tests ────────────────────────────────────────────────────────
   describe('POST /api/deliveries', () => {
     it('1. successfully creates a delivery request -> 201 Created', async () => {
@@ -195,6 +195,142 @@ describe('Delivery API', () => {
       expect(res.body.length).toBeGreaterThan(0);
       expect(res.body[0]).toHaveProperty('id');
       expect(res.body[0]).toHaveProperty('name');
+    });
+  });
+
+  // ── Task 5 Tests ────────────────────────────────────────────────────────
+  describe('PATCH /api/deliveries/:id/status', () => {
+    it('17. ASSIGNED -> PICKED_UP succeeds -> 200 OK', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      await request(app).patch(`/api/deliveries/${created.body.id}/assignment`).send({ riderId: 'RIDER-001' });
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'PICKED_UP' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('PICKED_UP');
+      expect(res.body.assignedRider).toBe('RIDER-001');
+    });
+
+    it('18. PICKED_UP -> DELIVERED succeeds -> 200 OK', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      await request(app).patch(`/api/deliveries/${created.body.id}/assignment`).send({ riderId: 'RIDER-001' });
+      await request(app).patch(`/api/deliveries/${created.body.id}/status`).send({ status: 'PICKED_UP' });
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'DELIVERED' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('DELIVERED');
+    });
+
+    it('19. REQUESTED -> PICKED_UP fails with 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'PICKED_UP' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Invalid status transition/i);
+    });
+
+    it('20. REQUESTED -> DELIVERED fails with 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'DELIVERED' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Invalid status transition/i);
+    });
+
+    it('21. ASSIGNED -> DELIVERED fails with 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      await request(app).patch(`/api/deliveries/${created.body.id}/assignment`).send({ riderId: 'RIDER-001' });
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'DELIVERED' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Invalid status transition/i);
+    });
+
+    it('22. DELIVERED -> PICKED_UP fails with 409 Conflict', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+      await request(app).patch(`/api/deliveries/${created.body.id}/assignment`).send({ riderId: 'RIDER-001' });
+      await request(app).patch(`/api/deliveries/${created.body.id}/status`).send({ status: 'PICKED_UP' });
+      await request(app).patch(`/api/deliveries/${created.body.id}/status`).send({ status: 'DELIVERED' });
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'PICKED_UP' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Invalid status transition/i);
+    });
+
+    it('23. Missing status returns 400 Bad Request', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/status/i);
+    });
+
+    it('24. Invalid status value returns 400 Bad Request', async () => {
+      const created = await request(app).post('/api/deliveries').send(validPayload);
+
+      const res = await request(app)
+        .patch(`/api/deliveries/${created.body.id}/status`)
+        .send({ status: 'INVALID_STATUS' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/status/i);
+    });
+
+    it('25. Unknown delivery returns 404 Not Found', async () => {
+      const res = await request(app)
+        .patch('/api/deliveries/NON_EXISTENT_ID/status')
+        .send({ status: 'PICKED_UP' });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toMatch(/not found/i);
+    });
+  });
+
+  describe('GET /api/riders/:riderId/deliveries', () => {
+    it('26. returns assigned deliveries for valid rider -> 200 OK', async () => {
+      const d1 = await request(app).post('/api/deliveries').send(validPayload);
+      const d2 = await request(app).post('/api/deliveries').send({ ...validPayload, customerName: 'Jane Wanjiru' });
+
+      await request(app).patch(`/api/deliveries/${d1.body.id}/assignment`).send({ riderId: 'RIDER-001' });
+
+      const res = await request(app).get('/api/riders/RIDER-001/deliveries');
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBe(1);
+      expect(res.body[0].id).toBe(d1.body.id);
+      expect(res.body[0].assignedRider).toBe('RIDER-001');
+    });
+
+    it('27. unknown rider returns 404 Not Found', async () => {
+      const res = await request(app).get('/api/riders/UNKNOWN_RIDER/deliveries');
+      expect(res.status).toBe(404);
+      expect(res.body.error).toMatch(/not found/i);
+    });
+
+    it('28. rider with no deliveries returns [] -> 200 OK', async () => {
+      const res = await request(app).get('/api/riders/RIDER-003/deliveries');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
     });
   });
 });

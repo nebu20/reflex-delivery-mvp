@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { DeliveryService, NotFoundError, ConflictError } from './delivery.service';
+import { DeliveryService, NotFoundError, ConflictError, ValidationError } from './delivery.service';
 import { RIDERS } from './delivery.types';
 
 export class DeliveryController {
@@ -44,6 +44,38 @@ export class DeliveryController {
         res.status(409).json({ error: err.message });
       } else {
         res.status(400).json({ error: err.message || 'Invalid request' });
+      }
+    }
+  };
+
+  updateStatus = (req: Request, res: Response): void => {
+    const id = req.params.id as string;
+    const { status } = req.body || {};
+
+    try {
+      const updated = this.service.updateDeliveryStatus(id, status);
+      res.status(200).json(updated);
+    } catch (err: any) {
+      if (err instanceof NotFoundError) {
+        res.status(404).json({ error: err.message });
+      } else if (err instanceof ConflictError) {
+        res.status(409).json({ error: err.message });
+      } else {
+        res.status(400).json({ error: err.message || 'Invalid status transition' });
+      }
+    }
+  };
+
+  getRiderDeliveries = (req: Request, res: Response): void => {
+    const riderId = req.params.riderId as string;
+    try {
+      const deliveries = this.service.getDeliveriesByRider(riderId);
+      res.status(200).json(deliveries);
+    } catch (err: any) {
+      if (err instanceof NotFoundError) {
+        res.status(404).json({ error: err.message });
+      } else {
+        res.status(400).json({ error: err.message });
       }
     }
   };

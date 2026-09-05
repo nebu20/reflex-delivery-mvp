@@ -350,6 +350,72 @@
   font-size: 12px;
 }
 
+/* ── Rider specific styles ──────────────────────────────────── */
+.rider-selector-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.rider-action-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-status {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  width: 100%;
+}
+
+.btn-status--pickup {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+.btn-status--pickup:hover:not(:disabled) {
+  background: #38bdf8;
+}
+
+.btn-status--deliver {
+  background: #22c55e;
+  color: #fff;
+}
+
+.btn-status--deliver:hover:not(:disabled) {
+  background: #4ade80;
+}
+
+.btn-status:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delivered-badge {
+  padding: 10px 16px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #4ade80;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
 .field-label {
   font-size: 11px;
   font-weight: 600;

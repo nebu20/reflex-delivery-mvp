@@ -15,6 +15,7 @@ export function createDeliveryRouter(db: Database.Database): Router {
   router.get('/', controller.getAllDeliveries);
   router.get('/:id', controller.getDeliveryById);
   router.patch('/:id/assignment', controller.assignRider);
+  router.patch('/:id/status', controller.updateStatus);
 
   return router;
 }

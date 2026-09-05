@@ -69,6 +69,11 @@ export class DeliveryRepository {
     return row ? rowToDelivery(row) : null;
   }
 
+  findByRiderId(riderId: string): Delivery[] {
+    const rows = this.db.prepare('SELECT * FROM deliveries WHERE assigned_rider = ? ORDER BY created_at DESC').all(riderId) as DeliveryRow[];
+    return rows.map(rowToDelivery);
+  }
+
   updateAssignment(id: string, riderId: string, status: string = 'ASSIGNED'): Delivery | null {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
@@ -80,7 +85,6 @@ export class DeliveryRepository {
     return this.findById(id);
   }
 
-  // Helper for tests/status updates
   updateStatus(id: string, status: string): Delivery | null {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
