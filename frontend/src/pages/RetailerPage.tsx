@@ -7,14 +7,14 @@ import '../styles/pages.css'
 interface FormState {
   customerName: string
   customerPhone: string
-  address: string
+  deliveryAddress: string
   itemDescription: string
 }
 
 const EMPTY_FORM: FormState = {
   customerName: '',
   customerPhone: '',
-  address: '',
+  deliveryAddress: '',
   itemDescription: '',
 }
 
@@ -45,7 +45,7 @@ export default function RetailerPage() {
       setSuccessDelivery(delivery)
       setForm(EMPTY_FORM)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setError(err instanceof Error ? err.message : 'Failed to create delivery request')
     } finally {
       setSubmitting(false)
     }
@@ -58,7 +58,7 @@ export default function RetailerPage() {
         <div className="page-header-content">
           <span className="page-icon">🏪</span>
           <div>
-            <h1 className="page-title">Retailer — Create Delivery</h1>
+            <h1 className="page-title">Retailer — Create Delivery Request</h1>
             <p className="page-subtitle">Submit a new delivery request for a customer</p>
           </div>
         </div>
@@ -86,7 +86,7 @@ export default function RetailerPage() {
                 id="customerPhone"
                 name="customerPhone"
                 type="tel"
-                placeholder="e.g. 0712 345 678"
+                placeholder="e.g. +254700000000"
                 value={form.customerPhone}
                 onChange={handleChange}
                 autoComplete="off"
@@ -94,13 +94,13 @@ export default function RetailerPage() {
             </div>
 
             <div className="form-field form-field--full">
-              <label htmlFor="address">Delivery Address</label>
+              <label htmlFor="deliveryAddress">Delivery Address</label>
               <input
-                id="address"
-                name="address"
+                id="deliveryAddress"
+                name="deliveryAddress"
                 type="text"
-                placeholder="e.g. Nairobi, Westlands — Mpaka Road"
-                value={form.address}
+                placeholder="e.g. Nairobi CBD, Kimathi Street"
+                value={form.deliveryAddress}
                 onChange={handleChange}
                 autoComplete="off"
               />
@@ -112,7 +112,7 @@ export default function RetailerPage() {
                 id="itemDescription"
                 name="itemDescription"
                 rows={3}
-                placeholder="e.g. Laptop, charger included"
+                placeholder="e.g. Samsung phone"
                 value={form.itemDescription}
                 onChange={handleChange}
               />
@@ -127,11 +127,11 @@ export default function RetailerPage() {
 
           {successDelivery && (
             <div className="alert alert--success" role="status">
-              <div className="alert-title">✓ Delivery request created!</div>
+              <div className="alert-title">✓ Delivery request created successfully!</div>
               <div className="delivery-summary">
-                <span><strong>ID:</strong> #{successDelivery.id}</span>
+                <span><strong>Delivery ID:</strong> <code>{successDelivery.id}</code></span>
                 <span><strong>Customer:</strong> {successDelivery.customerName}</span>
-                <span><strong>Status:</strong> <span className="status-badge status-pending">{successDelivery.status}</span></span>
+                <span><strong>Status:</strong> <span className="status-badge status-requested">{successDelivery.status}</span></span>
               </div>
             </div>
           )}
@@ -142,7 +142,7 @@ export default function RetailerPage() {
             disabled={submitting}
             id="create-delivery-btn"
           >
-            {submitting ? '⟳ Creating…' : '+ Create Delivery'}
+            {submitting ? '⟳ Submitting…' : 'Create Delivery Request'}
           </button>
         </form>
       </div>

@@ -5,10 +5,14 @@ import type { Delivery } from '../types/delivery'
 import '../styles/pages.css'
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('en-KE', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
+  try {
+    return new Date(iso).toLocaleString('en-KE', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
+  } catch {
+    return iso
+  }
 }
 
 export default function DispatcherPage() {
@@ -21,10 +25,10 @@ export default function DispatcherPage() {
     setLoading(true)
     setError(null)
     try {
-      const data = await apiFetch<Delivery[]>('/deliveries?status=PENDING')
+      const data = await apiFetch<Delivery[]>('/deliveries')
       setDeliveries(data)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load deliveries')
+      setError(err instanceof Error ? err.message : 'Failed to load delivery requests')
     } finally {
       setLoading(false)
     }
@@ -41,8 +45,8 @@ export default function DispatcherPage() {
         <div className="page-header-content">
           <span className="page-icon">📋</span>
           <div>
-            <h1 className="page-title">Dispatcher — Pending Deliveries</h1>
-            <p className="page-subtitle">Review open delivery requests awaiting assignment</p>
+            <h1 className="page-title">Dispatcher — Delivery Requests</h1>
+            <p className="page-subtitle">View and monitor all incoming delivery requests</p>
           </div>
         </div>
         <button className="btn-secondary" onClick={fetchDeliveries} disabled={loading}>
@@ -64,19 +68,19 @@ export default function DispatcherPage() {
       {!loading && !error && deliveries.length === 0 && (
         <div className="state-box state-box--empty">
           <span className="state-icon">📭</span>
-          <p>No pending deliveries right now.</p>
-          <p className="state-hint">New requests from retailers will appear here.</p>
+          <p>No delivery requests found.</p>
+          <p className="state-hint">Requests created by retailers will appear here.</p>
         </div>
       )}
 
       {!loading && !error && deliveries.length > 0 && (
         <div className="delivery-list">
-          <div className="list-meta">{deliveries.length} pending request{deliveries.length !== 1 ? 's' : ''}</div>
+          <div className="list-meta">{deliveries.length} delivery request{deliveries.length !== 1 ? 's' : ''}</div>
           {deliveries.map((d) => (
             <div className="delivery-card" key={d.id} id={`delivery-${d.id}`}>
               <div className="delivery-card-header">
-                <span className="delivery-id">#{d.id}</span>
-                <span className="status-badge status-pending">{d.status}</span>
+                <span className="delivery-id">ID: {d.id}</span>
+                <span className={`status-badge status-${(d.status || 'REQUESTED').toLowerCase()}`}>{d.status}</span>
               </div>
               <div className="delivery-card-body">
                 <div className="delivery-field">
@@ -89,7 +93,7 @@ export default function DispatcherPage() {
                 </div>
                 <div className="delivery-field delivery-field--full">
                   <span className="field-label">📍 Address</span>
-                  <span className="field-value">{d.address}</span>
+                  <span className="field-value">{d.deliveryAddress || d.address}</span>
                 </div>
                 <div className="delivery-field delivery-field--full">
                   <span className="field-label">📦 Item</span>

@@ -301,6 +301,7 @@
   text-transform: uppercase;
 }
 
+.status-requested{ background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
 .status-pending  { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
 .status-assigned { background: rgba(91, 110, 245, 0.15); color: #818cf8; border: 1px solid rgba(91, 110, 245, 0.3); }
 .status-picked   { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }

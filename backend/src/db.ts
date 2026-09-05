@@ -18,15 +18,15 @@ export function applySchema(instance: Database.Database): void {
   instance.pragma('journal_mode = WAL');
   instance.exec(`
     CREATE TABLE IF NOT EXISTS deliveries (
-      id              INTEGER PRIMARY KEY AUTOINCREMENT,
-      customer_name   TEXT    NOT NULL,
-      customer_phone  TEXT    NOT NULL,
-      address         TEXT    NOT NULL,
-      item_description TEXT   NOT NULL,
-      status          TEXT    NOT NULL DEFAULT 'PENDING',
-      assigned_rider  TEXT,
-      created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+      id               TEXT PRIMARY KEY,
+      customer_name    TEXT NOT NULL,
+      customer_phone   TEXT NOT NULL,
+      delivery_address TEXT NOT NULL,
+      item_description TEXT NOT NULL,
+      status           TEXT NOT NULL DEFAULT 'REQUESTED',
+      assigned_rider   TEXT,
+      created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 }

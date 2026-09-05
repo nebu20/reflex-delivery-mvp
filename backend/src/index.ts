@@ -1,22 +1,13 @@
-import express from 'express';
-import cors from 'cors';
-import healthRouter from './routes/health';
-import deliveriesRouter from './routes/deliveries';
-import { initDb } from './db';
+import { initDb, getDb } from './db';
+import { createApp } from './createApp';
 
-const app = express();
 const PORT = process.env.PORT || 3001;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
 
 // Initialize database
 initDb();
 
-// Routes
-app.use('/api', healthRouter);
-app.use('/api/deliveries', deliveriesRouter);
+// Create app bound to database
+const app = createApp(getDb());
 
 app.listen(PORT, () => {
   console.log(`🚀 Reflex API running on http://localhost:${PORT}`);

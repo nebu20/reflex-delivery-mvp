@@ -12,3 +12,10 @@ export interface Delivery {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CreateDeliveryDTO {
+  customerName: string;
+  customerPhone: string;
+  deliveryAddress: string;
+  itemDescription: string;
+}
